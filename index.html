@@ -692,56 +692,55 @@ document.getElementById('shareBtn').addEventListener('click',()=>{
 // ── Stars canvas — throttled to ~12fps to save battery ──
 (function(){
   const cv=document.getElementById('stars');
+  if(!cv) return;
   const cx=cv.getContext('2d');
+
   function resize(){
     cv.width=innerWidth;
     cv.height=innerHeight;
   }
   resize();
-  addEventListener('resize',resize);
+  addEventListener('resize', resize);
 
   // Mix of small, medium and large stars with very different pulse rhythms
   const ST=Array.from({length:160},()=>{
     const roll=Math.random();
-    // ~10% big bright stars, ~25% medium, rest small
     const r = roll<0.10 ? 2.2+Math.random()*1.2   // big: 2.2–3.4px
             : roll<0.35 ? 1.4+Math.random()*0.8    // medium: 1.4–2.2px
                         : 0.6+Math.random()*0.7;   // small: 0.6–1.3px
     return {
-      x:Math.random(), y:Math.random(),
-      r,
-      // base brightness higher for bigger stars
-      base: r>2 ? 0.6+Math.random()*0.4
-               : r>1.4 ? 0.4+Math.random()*0.4
-               : 0.2+Math.random()*0.5,
-      // wide speed range → very random feel: some slow dreamers, some fast flashers
-      speed: 0.1+Math.random()*Math.random()*3.5,
+      x: Math.random(), y: Math.random(), r,
+      base: r>2   ? 0.6+Math.random()*0.4
+          : r>1.4 ? 0.4+Math.random()*0.4
+                  : 0.2+Math.random()*0.5,
+      // speed in radians/sec — wide range so each star has its own rhythm
+      speed: 0.2 + Math.random()*Math.random()*2.5,
       phase: Math.random()*Math.PI*2,
-      // occasional "flicker" stars that drop near zero
       flicker: Math.random()<0.15
     };
   });
 
-  let last=0;
-  const INTERVAL=1000/12; // 12fps max
+  let last=0, paused=false;
+  const INTERVAL=1000/12; // ~12fps
+
+  // Pause animation when tab/app is hidden — saves battery
+  document.addEventListener('visibilitychange',()=>{ paused=document.hidden; });
 
   function draw(ts){
     requestAnimationFrame(draw);
-    if(ts-last < INTERVAL) return;
+    if(paused || ts-last < INTERVAL) return;
     last=ts;
-    const t=ts/1000;
+    const t=ts/1000; // seconds
     cx.clearRect(0,0,cv.width,cv.height);
     ST.forEach(s=>{
-      // base sine wave
-      let wave=Math.sin(t*s.speed*Math.PI*2/60+s.phase);
-      // flicker stars: also multiply by a faster secondary wave
-      if(s.flicker) wave*=0.5+0.5*Math.abs(Math.sin(t*s.speed*4+s.phase*1.7));
-      const a=Math.max(0.05, s.base*(0.3+0.7*((wave+1)/2)));
+      // sine oscillates -1..1, map to 0..1
+      let wave=(Math.sin(t*s.speed+s.phase)+1)/2;
+      if(s.flicker) wave*=(Math.sin(t*s.speed*3.7+s.phase*1.3)+1)/2;
+      const a=Math.max(0.04, s.base*(0.2+0.8*wave));
+      const g=s.r>2 ? 220 : 210;
+      const b=s.r>2 ? 210 : 155;
       cx.beginPath();
       cx.arc(s.x*cv.width, s.y*cv.height, s.r, 0, Math.PI*2);
-      // big stars get a warm white, small ones slightly golden
-      const g = s.r>2 ? 220 : 210;
-      const b = s.r>2 ? 210 : 155;
       cx.fillStyle=`rgba(230,${g},${b},${a.toFixed(2)})`;
       cx.fill();
     });
