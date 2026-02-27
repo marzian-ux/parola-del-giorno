@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#050d1e">
+<title>Parola del Giorno</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300;1,400&family=Cinzel:wght@400&display=swap" rel="stylesheet">
+
+<style>
+/* ── Reset ── */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#050d1e;
+  font-family:'Cormorant Garamond',Georgia,serif;
+  -webkit-tap-highlight-color:transparent;user-select:none}
+
+/* ── CSS Variables ── */
+:root{
+  --gold:#c9a84c;--gold2:#e8c97a;--gold3:rgba(201,168,76,.15);
+  --cream:#f5efe0;--deep:#050d1e;
+}
+
+/* ── Background gradient — blu notte ── */
+.bg{
+  position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 0%,   #0a1a40 0%,transparent 65%),
+    radial-gradient(ellipse 55% 45% at 10% 90%,  #071430 0%,transparent 60%),
+    radial-gradient(ellipse 50% 60% at 90% 40%,  #060f28 0%,transparent 65%),
+    radial-gradient(ellipse 70% 40% at 50% 100%, #04090f 0%,transparent 60%),
+    #050d1e;
+}
+
+/* ── Stars canvas ── */
+#stars{position:fixed;inset:0;pointer-events:none;}
+
+/* ── Light ray from top: single div, CSS transform, GPU ── */
+.ray{
+  position:fixed;
+  top:-10vh;left:50%;
+  transform:translateX(-50%);
+  width:160vw;height:110vh;
+  background:conic-gradient(from 180deg at 50% 0%,
+    transparent 72deg,
+    rgba(201,168,76,.06) 84deg,
+    rgba(201,168,76,.11) 90deg,
+    rgba(201,168,76,.06) 96deg,
+    transparent 108deg
+  );
+  animation:raySwing 20s ease-in-out infinite alternate;
+  mix-blend-mode:screen;pointer-events:none;
+  will-change:transform;
+}
+@keyframes raySwing{
+  0%  {transform:translateX(-50%) rotate(-12deg)}
+  100%{transform:translateX(-50%) rotate(12deg)}
+}
+
+/* ── 8 floating particles ── */
+.p{
+  position:fixed;bottom:-20px;
+  width:3px;height:3px;border-radius:50%;
+  background:var(--gold);pointer-events:none;
+  animation:rise linear infinite;
+  will-change:transform,opacity;
+}
+.p:nth-child(1){left:10%;animation-duration:18s;animation-delay:0s}
+.p:nth-child(2){left:25%;animation-duration:26s;animation-delay:5s;width:2px;height:2px;opacity:.7}
+.p:nth-child(3){left:42%;animation-duration:21s;animation-delay:11s}
+.p:nth-child(4){left:58%;animation-duration:28s;animation-delay:3s;width:2px;height:2px;opacity:.6}
+.p:nth-child(5){left:70%;animation-duration:19s;animation-delay:16s}
+.p:nth-child(6){left:82%;animation-duration:23s;animation-delay:8s;width:2px;height:2px;opacity:.7}
+.p:nth-child(7){left:33%;animation-duration:31s;animation-delay:20s}
+.p:nth-child(8){left:90%;animation-duration:22s;animation-delay:13s;width:2px;height:2px}
+@keyframes rise{
+  0%  {transform:translateY(0)   translateX(0);  opacity:0}
+  5%  {opacity:.8}
+  95% {opacity:.3}
+  100%{transform:translateY(-105vh) translateX(40px);opacity:0}
+}
+
+/* ── Frame border ── */
+.frame{
+  position:fixed;inset:22px;
+  border:1px solid rgba(201,168,76,.18);
+  border-radius:2px;pointer-events:none;
+}
+.frame::before{
+  content:'';position:absolute;inset:7px;
+  border:1px solid rgba(201,168,76,.06);
+}
+/* Corner SVGs */
+.c{position:absolute;width:48px;height:48px}
+.c.tl{top:-1px;left:-1px}
+.c.tr{top:-1px;right:-1px;transform:scaleX(-1)}
+.c.bl{bottom:-1px;left:-1px;transform:scaleY(-1)}
+.c.br{bottom:-1px;right:-1px;transform:scale(-1,-1)}
+
+/* ── Main content ── */
+.wrap{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:80px 36px 96px;
+  text-align:center;
+}
+
+/* Fade-up entrance — runs once on load */
+.label{
+  font-family:'Cinzel',serif;
+  font-size:clamp(8px,2.2vw,11px);
+  letter-spacing:.45em;color:var(--gold);
+  text-transform:uppercase;margin-bottom:24px;
+  opacity:0;animation:up 1.2s ease forwards .4s;
+}
+.div1{
+  width:100px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  margin-bottom:30px;
+  opacity:0;animation:up 1.2s ease forwards .7s;
+}
+.qo{
+  font-size:clamp(70px,20vw,110px);
+  color:rgba(201,168,76,.1);line-height:.4;
+  align-self:flex-start;margin-left:8px;
+  font-style:normal;font-weight:300;
+  opacity:0;animation:fadein 1.6s ease forwards 1s;
+}
+.verse{
+  font-size:clamp(21px,5.8vw,32px);
+  font-weight:300;font-style:italic;line-height:1.55;
+  color:var(--cream);max-width:100%;
+  text-shadow:0 2px 24px rgba(201,168,76,.12);
+  opacity:0;animation:up 1.8s ease forwards 1.1s, pulse 9s ease-in-out infinite 4s;
+}
+.qc{
+  font-size:clamp(70px,20vw,110px);
+  color:rgba(201,168,76,.1);line-height:.4;
+  align-self:flex-end;margin-right:8px;
+  font-style:normal;font-weight:300;
+  transform:translateY(-10px);
+  opacity:0;animation:fadein 1.6s ease forwards 1.4s;
+}
+.div2{
+  width:60px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold2),transparent);
+  margin:26px auto 18px;
+  opacity:0;animation:up 1.2s ease forwards 1.8s;
+}
+.ref{
+  font-family:'Cinzel',serif;
+  font-size:clamp(9px,2.5vw,13px);
+  letter-spacing:.3em;color:var(--gold);
+  opacity:0;animation:up 1.2s ease forwards 2s;
+}
+.date{
+  position:fixed;bottom:34px;left:0;right:0;
+  text-align:center;
+  font-family:'Cinzel',serif;
+  font-size:clamp(7px,1.8vw,10px);
+  letter-spacing:.28em;color:rgba(201,168,76,.3);
+  opacity:0;animation:fadein 2s ease forwards 2.6s;
+}
+/* Cross top ornament */
+.cross{
+  position:fixed;top:46px;left:50%;transform:translateX(-50%);
+  opacity:0;animation:fadein 2s ease forwards .3s;
+}
+
+@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+@keyframes pulse{
+  0%,100%{text-shadow:0 2px 24px rgba(201,168,76,.1)}
+  50%     {text-shadow:0 2px 52px rgba(201,168,76,.22),0 0 80px rgba(201,168,76,.07)}
+}
+
+/* ── Share button ── */
+.share-btn{
+  position:fixed;bottom:62px;right:26px;
+  width:44px;height:44px;border-radius:50%;
+  background:rgba(201,168,76,.12);
+  border:1px solid rgba(201,168,76,.3);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  opacity:0;animation:fadein 2s ease forwards 3s;
+  transition:background .2s;
+}
+.share-btn:active{background:rgba(201,168,76,.25)}
+.share-btn svg{width:20px;height:20px;fill:var(--gold)}
+
+/* ── Toast ── */
+.toast{
+  position:fixed;bottom:120px;left:50%;transform:translateX(-50%);
+  background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3);
+  color:var(--cream);font-family:'Cinzel',serif;font-size:11px;
+  letter-spacing:.2em;padding:10px 20px;border-radius:2px;
+  opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap;
+}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+
+<canvas id="stars"></canvas>
+
+<!-- Light ray -->
+<div class="ray"></div>
+
+<!-- 8 particles -->
+<div class="p"></div>
+<div class="p"></div>
+<div class="p"></div>
+<div class="p"></div>
+<div class="p"></div>
+<div class="p"></div>
+<div class="p"></div>
+<div class="p"></div>
+
+<!-- Ornamental frame -->
+<div class="frame">
+  <svg class="c tl" viewBox="0 0 48 48" fill="none">
+    <path d="M1 47L1 1L47 1" stroke="rgba(201,168,76,.55)" stroke-width="1"/>
+    <path d="M1 30L1 1L30 1" stroke="rgba(201,168,76,.22)" stroke-width=".6"/>
+    <circle cx="1" cy="1" r="2.5" fill="rgba(201,168,76,.7)"/>
+  </svg>
+  <svg class="c tr" viewBox="0 0 48 48" fill="none">
+    <path d="M1 47L1 1L47 1" stroke="rgba(201,168,76,.55)" stroke-width="1"/>
+    <path d="M1 30L1 1L30 1" stroke="rgba(201,168,76,.22)" stroke-width=".6"/>
+    <circle cx="1" cy="1" r="2.5" fill="rgba(201,168,76,.7)"/>
+  </svg>
+  <svg class="c bl" viewBox="0 0 48 48" fill="none">
+    <path d="M1 47L1 1L47 1" stroke="rgba(201,168,76,.55)" stroke-width="1"/>
+    <path d="M1 30L1 1L30 1" stroke="rgba(201,168,76,.22)" stroke-width=".6"/>
+    <circle cx="1" cy="1" r="2.5" fill="rgba(201,168,76,.7)"/>
+  </svg>
+  <svg class="c br" viewBox="0 0 48 48" fill="none">
+    <path d="M1 47L1 1L47 1" stroke="rgba(201,168,76,.55)" stroke-width="1"/>
+    <path d="M1 30L1 1L30 1" stroke="rgba(201,168,76,.22)" stroke-width=".6"/>
+    <circle cx="1" cy="1" r="2.5" fill="rgba(201,168,76,.7)"/>
+  </svg>
+</div>
+
+<!-- Cross ornament -->
+<div class="cross">
+  <svg width="22" height="28" viewBox="0 0 22 28" fill="none">
+    <line x1="11" y1="0" x2="11" y2="28" stroke="rgba(201,168,76,.45)" stroke-width="1"/>
+    <line x1="0"  y1="9" x2="22" y2="9"  stroke="rgba(201,168,76,.45)" stroke-width="1"/>
+    <circle cx="11" cy="9" r="2" fill="rgba(201,168,76,.7)"/>
+  </svg>
+</div>
+
+<!-- Main content -->
+<div class="wrap">
+  <div class="label">✦ &nbsp; Parola del Giorno &nbsp; ✦</div>
+  <div class="div1"></div>
+  <div class="qo">"</div>
+  <p class="verse" id="verse"></p>
+  <div class="qc">"</div>
+  <div class="div2"></div>
+  <div class="ref" id="ref"></div>
+</div>
+
+<div class="date" id="date"></div>
+
+<!-- Share button -->
+<div class="share-btn" id="shareBtn" title="Condividi">
+  <svg viewBox="0 0 24 24"><path d="M18 16a3 3 0 00-2.04.8L8.91 12.7A3.1 3.1 0 009 12a3.1 3.1 0 00-.09-.7l7-4.07A3 3 0 1014.91 6l-7 4.07A3 3 0 108.91 15.3l7.05 4.07A3 3 0 1018 16z"/></svg>
+</div>
+<div class="toast" id="toast">Versetto copiato!</div>
+
+<script>
+// ── Verses ──
+const V=[
+  // GENNAIO
+  ["Sii forte e coraggioso!\nNon ti spaventare, perché\nil Signore tuo Dio è con te.","Giosuè 1:9"],
+  ["Il Signore è il mio pastore;\nnulla mi mancherà.","Salmi 23:1"],
+  ["L'amore è paziente, è benevolo;\nl'amore non invidia.","1 Corinzi 13:4"],
+  ["Confida nel Signore\ncon tutto il tuo cuore.","Proverbi 3:5"],
+  ["Posso far tutto per mezzo\ndi Cristo che mi fortifica.","Filippesi 4:13"],
+  ["Ho pensieri di pace per voi\ne non di male.","Geremia 29:11"],
+  ["Il perfetto amore\ncaccia via il timore.","1 Giovanni 4:18"],
+  ["Il Signore è la mia luce\ne la mia salvezza; chi temerò?","Salmi 27:1"],
+  ["Cercate prima il regno di Dio\ne tutto vi sarà dato in più.","Matteo 6:33"],
+  ["Gettate su di lui ogni preoccupazione,\nperché egli ha cura di voi.","1 Pietro 5:7"],
+  ["Dio è amore, e chi dimora\nnell'amore dimora in Dio.","1 Giovanni 4:16"],
+  ["Ogni cosa concorre al bene\ndi quelli che amano Dio.","Romani 8:28"],
+  ["Il Signore ti benedica\ne ti protegga.","Numeri 6:24"],
+  ["Chiedete e vi sarà dato;\ncercate e troverete.","Matteo 7:7"],
+  ["Non permettere che il male\nti vinca, ma vinci il male\ncon il bene.","Romani 12:21"],
+  ["Il mio Dio provvederà\nad ogni vostro bisogno.","Filippesi 4:19"],
+  ["L'amore\nnon viene mai meno.","1 Corinzi 13:8"],
+  ["Il cuore gioioso\nè un rimedio salutare.","Proverbi 17:22"],
+  ["La speranza non delude,\nperché l'amore di Dio\nè sparso nei nostri cuori.","Romani 5:5"],
+  ["Quando sono debole,\nallora sono forte.","2 Corinzi 12:10"],
+  ["Rallegratevi sempre nel Signore;\nve lo ripeto, rallegratevi!","Filippesi 4:4"],
+  ["Non stancatevi di fare il bene:\nmieteremo a suo tempo.","Galati 6:9"],
+  ["Benedetto l'uomo\nche confida nel Signore.","Geremia 17:7"],
+  ["Il Signore è vicino\na quelli che hanno\nil cuore spezzato.","Salmi 34:18"],
+  ["Siate forti nel Signore\ne nella sua potenza.","Efesini 6:10"],
+  ["La parola di Dio\nè viva ed efficace.","Ebrei 4:12"],
+  ["Non abbiate ansia di nulla,\nma presentate ogni cosa a Dio.","Filippesi 4:6"],
+  ["Siate fermi nella fede,\ncomportatevi da uomini,\nsiate forti.","1 Corinzi 16:13"],
+  ["Il Signore è buono,\nun rifugio nel giorno\ndella distretta.","Naum 1:7"],
+  ["Voi siete il sale della terra.\nVoi siete la luce del mondo.","Matteo 5:13-14"],
+  ["Il tuo volto, o Signore, io cerco.\nNon nascondermi il tuo volto.","Salmi 27:8-9"],
+  // FEBBRAIO
+  ["Amate i vostri nemici\ne pregate per coloro\nche vi perseguitano.","Matteo 5:44"],
+  ["Dio ha tanto amato il mondo\nche ha dato il suo\nFiglio unigenito.","Giovanni 3:16"],
+  ["Non sono venuto per essere servito,\nma per servire.","Matteo 20:28"],
+  ["L'amore\ncopre ogni mancanza.","Proverbi 10:12"],
+  ["Metti il tuo diletto nel Signore\ned egli ti darà\nciò che il cuore desidera.","Salmi 37:4"],
+  ["In questo è stato manifestato\nl'amore di Dio:\nha mandato il suo Figlio.","1 Giovanni 4:9"],
+  ["Amerai il Signore tuo Dio\ncon tutto il tuo cuore.","Matteo 22:37"],
+  ["Chi rimane nell'amore\nrimane in Dio\ne Dio rimane in lui.","1 Giovanni 4:16"],
+  ["Siate benevoli, misericordiosi,\nperdonandovi a vicenda.","Efesini 4:32"],
+  ["Sopra tutto rivestiti della carità,\nche è il vincolo\ndella perfezione.","Colossesi 3:14"],
+  ["Due valgono più di uno,\nperché hanno una buona\nricompensa per la fatica.","Ecclesiaste 4:9"],
+  ["La misericordia e la fedeltà\nsi incontrano; la giustizia\ne la pace si baciano.","Salmi 85:10"],
+  ["Amerai il prossimo tuo\ncome te stesso.","Matteo 22:39"],
+  ["Non vi è affetto più grande:\ndare la vita per i propri amici.","Giovanni 15:13"],
+  ["Siate pronti a rispondere\na chiunque vi chieda ragione\ndella speranza che è in voi.","1 Pietro 3:15"],
+  ["Il timore del Signore\nè il principio della saggezza.","Proverbi 9:10"],
+  ["Io sono la via,\nla verità e la vita.","Giovanni 14:6"],
+  ["La pace di Dio, che supera\nogni intelligenza,\ncustodirà i vostri cuori.","Filippesi 4:7"],
+  ["Il tuo amore vale più della vita;\nle mie labbra ti loderanno.","Salmi 63:3"],
+  ["Tutti i miei giorni erano\nscritti nel tuo libro\nprima che ne fosse formato uno.","Salmi 139:16"],
+  ["Non siate conformi a questo mondo,\nma siate trasformati.","Romani 12:2"],
+  ["Colui che è in voi\nè più grande di colui\nche è nel mondo.","1 Giovanni 4:4"],
+  ["Siamo opera sua, creati\nin Cristo Gesù\nper le buone opere.","Efesini 2:10"],
+  ["Dio ha creato l'uomo\na sua immagine.","Genesi 1:27"],
+  ["Non angosciatevi per il domani;\nil domani penserà a se stesso.","Matteo 6:34"],
+  ["Beati i puri di cuore,\nperché vedranno Dio.","Matteo 5:8"],
+  ["Beati gli operatori di pace,\nperché saranno chiamati\nfigli di Dio.","Matteo 5:9"],
+  ["Chi è in Cristo\nè una nuova creatura;\nle cose vecchie sono passate.","2 Corinzi 5:17"],
+  // MARZO
+  ["Non temere, perché sono con te;\nnon ti scoraggiare,\nperché io sono il tuo Dio.","Isaia 41:10"],
+  ["Anche se camminassi\nnella valle dell'ombra della morte,\nnon temerei alcun male.","Salmi 23:4"],
+  ["Se Dio è per noi,\nchi sarà contro di noi?","Romani 8:31"],
+  ["Io sono la luce del mondo;\nchi mi segue non camminerà\nnelle tenebre.","Giovanni 8:12"],
+  ["Il Signore combatterà per voi;\nvoi state fermi.","Esodo 14:14"],
+  ["Tu tieni ferma la pace\na colui che confida in te.","Isaia 26:3"],
+  ["Nulla separerà noi dall'amore\ndi Dio che è in Cristo Gesù.","Romani 8:39"],
+  ["Correte in modo\nda ottenere il premio.","1 Corinzi 9:24"],
+  ["Ogni buona donazione\ne ogni dono perfetto\nvengono dall'alto.","Giacomo 1:17"],
+  ["Beato l'uomo che sopporta\nla tentazione: riceverà\nla corona della vita.","Giacomo 1:12"],
+  ["La fede è sostanza\ndi cose sperate,\ndimostrazione di cose non viste.","Ebrei 11:1"],
+  ["Senza fede è impossibile\npiacere a Dio.","Ebrei 11:6"],
+  ["La mia forza e il mio canto\nè il Signore;\negli è stato la mia salvezza.","Esodo 15:2"],
+  ["In principio era la Parola,\ne la Parola era con Dio.","Giovanni 1:1"],
+  ["Chiunque chiede riceve,\nchi cerca trova,\na chi bussa sarà aperto.","Luca 11:10"],
+  ["Lodate il Signore,\nperché il Signore è buono.","Salmi 135:3"],
+  ["Rendete grazie in ogni cosa:\nquesta è la volontà di Dio.","1 Tessalonicesi 5:18"],
+  ["Gesù Cristo è lo stesso\nieri, oggi e in eterno.","Ebrei 13:8"],
+  ["Vegliate e pregate,\nper non cadere in tentazione.","Matteo 26:41"],
+  ["Chi semina molto\nraccoglierà molto.","2 Corinzi 9:6"],
+  ["Il Signore è la mia forza\ne il mio scudo;\nil mio cuore confida in lui.","Salmi 28:7"],
+  ["Il tuo Dio è in mezzo a te\ncome un potente salvatore.","Sofonia 3:17"],
+  ["Il Signore ti guida sempre\ne sazia la tua anima\nnelle siccità.","Isaia 58:11"],
+  ["Le sue misericordie\nsi rinnovano ogni mattina.\nGrande è la tua fedeltà!","Lamentazioni 3:22-23"],
+  ["Io sono il pane della vita.\nChi viene a me\nnon avrà mai fame.","Giovanni 6:35"],
+  ["Io sono il buon pastore.\nIl buon pastore dà la vita\nper le pecore.","Giovanni 10:11"],
+  ["Dio ha potere di fare\ninfinitamente più\ndi quello che chiediamo.","Efesini 3:20"],
+  ["Dimorate in me e io in voi.\nChi rimane in me\nporta molto frutto.","Giovanni 15:4-5"],
+  ["Vi lascio la pace;\nvi do la mia pace.","Giovanni 14:27"],
+  ["Lo Spirito di verità\nvi guiderà\nin tutta la verità.","Giovanni 16:13"],
+  ["La gioia del Signore\nè la vostra forza!","Neemia 8:10"],
+  // APRILE
+  ["Cristo è risorto!\nÈ risorto davvero!","Luca 24:34"],
+  ["Io sono la risurrezione\ne la vita.","Giovanni 11:25"],
+  ["Andate e fate discepoli\ndi tutte le nazioni.","Matteo 28:19"],
+  ["Ecco, io sono con voi\ntutti i giorni,\nfino alla fine del mondo.","Matteo 28:20"],
+  ["Ho vinto il mondo!\nAbbiate coraggio.","Giovanni 16:33"],
+  ["Il frutto dello Spirito è\namore, gioia, pace,\nbontà, fedeltà.","Galati 5:22"],
+  ["Dio asciugherà ogni lacrima;\nnon vi sarà più morte\nné dolore.","Apocalisse 21:4"],
+  ["Ecco,\nio faccio nuove tutte le cose.","Apocalisse 21:5"],
+  ["Beati i misericordiosi,\nperché otterranno misericordia.","Matteo 5:7"],
+  ["Siate misericordiosi\ncome è misericordioso\nil Padre vostro.","Luca 6:36"],
+  ["Perdonatevi l'un l'altro\ncome Dio vi ha perdonati.","Colossesi 3:13"],
+  ["Nella casa del Padre mio\nci sono molte dimore.","Giovanni 14:2"],
+  ["Venite a me,\nvoi tutti che siete affaticati,\ne io vi darò riposo.","Matteo 11:28"],
+  ["Il mio giogo è dolce\ne il mio carico è leggero.","Matteo 11:30"],
+  ["Abbiate in voi gli stessi sentimenti\nche furono in Cristo Gesù.","Filippesi 2:5"],
+  ["Siate umili, mansueti, pazienti,\nsopportandovi a vicenda\nnell'amore.","Efesini 4:2"],
+  ["La fede\nsenza le opere è morta.","Giacomo 2:26"],
+  ["La speranza non delude.","Romani 5:5"],
+  ["Il Signore è fedele;\nvi rafforzerà e vi guarderà\ndal maligno.","2 Tessalonicesi 3:3"],
+  ["Cercate le cose di lassù,\ndove Cristo è seduto\nalla destra di Dio.","Colossesi 3:1"],
+  ["Lodate il Signore, anima mia!\nLo loderò finché avrò vita.","Salmi 146:1-2"],
+  ["Il Signore regna!\nEsulti la terra!","Salmi 97:1"],
+  ["Chi non ama non ha conosciuto Dio,\nperché Dio è amore.","1 Giovanni 4:8"],
+  ["Noi amiamo\nperché egli ci ha amati per primo.","1 Giovanni 4:19"],
+  ["Cristo è morto per noi\nmentre eravamo\nancora peccatori.","Romani 5:8"],
+  ["Siate dunque imitatori di Dio,\ncome figli carissimi.","Efesini 5:1"],
+  ["Tutto quello che volete\nche gli uomini vi facciano,\nfatelo anche voi a loro.","Matteo 7:12"],
+  ["Beati quelli che hanno\nfame di giustizia,\nperché saranno saziati.","Matteo 5:6"],
+  ["Beati i miti,\nperché erediteranno la terra.","Matteo 5:5"],
+  ["Create in me, o Dio,\nun cuore puro.","Salmi 51:10"],
+  // MAGGIO
+  ["Il Signore è il mio rifugio\ne la mia fortezza;\nil mio Dio, in cui mi confido.","Salmi 91:2"],
+  ["Perché ti abbatti, anima mia?\nSpera in Dio!","Salmi 42:5"],
+  ["Canta al Signore\nun canto nuovo!","Isaia 42:10"],
+  ["Il Signore ti guarda\nesultando di gioia per te.","Sofonia 3:17"],
+  ["Il Signore è buono\nper coloro che confidano in lui.","Lamentazioni 3:25"],
+  ["I figli sono\nun'eredità del Signore.","Salmi 127:3"],
+  ["Onora tuo padre\ne tua madre.","Esodo 20:12"],
+  ["Insegna al giovane\nla via che deve percorrere.","Proverbi 22:6"],
+  ["Il Signore è\nla mia forza e il mio canto.","Salmi 118:14"],
+  ["Dio non ci ha dato\nuno spirito di timidità,\nma di forza e di amore.","2 Timoteo 1:7"],
+  ["Combatti il buon combattimento\ndella fede.","1 Timoteo 6:12"],
+  ["Ho imparato a essere contento\nin qualunque stato mi trovi.","Filippesi 4:11"],
+  ["Benedici il Signore, anima mia,\nnon dimenticare\nnessuno dei suoi benefici.","Salmi 103:2"],
+  ["Il Signore è compassionevole\ne pieno di grazia,\nlento all'ira.","Salmi 103:8"],
+  ["Come un padre è misericordioso\ncon i figli, così il Signore\ncon chi lo teme.","Salmi 103:13"],
+  ["Il Signore è il mio aiuto;\nnon temerò.","Ebrei 13:6"],
+  ["Umiliatevi davanti al Signore\ned egli vi esalterà.","Giacomo 4:10"],
+  ["L'umiltà\nprecede la gloria.","Proverbi 15:33"],
+  ["La speranza differita fa male\nal cuore, ma il desiderio\nesaudito è un albero di vita.","Proverbi 13:12"],
+  ["Il timore del Signore\nè il principio della saggezza.","Proverbi 1:7"],
+  ["Avvicinatevi a Dio\ned egli si avvicinerà a voi.","Giacomo 4:8"],
+  ["Siate pazienti, fratelli,\nfino alla venuta del Signore.","Giacomo 5:7"],
+  ["Il Signore è pieno di compassione\ne di misericordia.","Giacomo 5:11"],
+  ["Siate facitori della parola\ne non soltanto uditori.","Giacomo 1:22"],
+  ["Chi sa fare il bene e non lo fa,\ncommette un peccato.","Giacomo 4:17"],
+  ["Portate i pesi\ngli uni degli altri.","Galati 6:2"],
+  ["La preghiera del giusto\nha grande efficacia.","Giacomo 5:16"],
+  ["Ogni uomo sia pronto ad ascoltare,\nlento a parlare.","Giacomo 1:19"],
+  ["Il frutto della giustizia\nsi semina nella pace.","Giacomo 3:18"],
+  ["La sapienza dall'alto\nè anzitutto pura,\npoi pacifica e mite.","Giacomo 3:17"],
+  ["Glorificate dunque Dio\nnel vostro corpo.","1 Corinzi 6:20"],
+  // GIUGNO
+  ["L'anima mia ha sete di Dio,\ndel Dio vivente.","Salmi 42:2"],
+  ["Quanto sono amabili\nle tue dimore,\no Signore degli eserciti!","Salmi 84:1"],
+  ["Un solo giorno nei tuoi atri\nè meglio di mille altrove.","Salmi 84:10"],
+  ["La tua bontà e la tua misericordia\nmi seguiranno tutta la vita.","Salmi 23:6"],
+  ["Il Signore veglierà\nsulla tua uscita e sulla tua entrata,\nora e per sempre.","Salmi 121:8"],
+  ["Grande è il Signore\ne degno di ogni lode.","Salmi 145:3"],
+  ["Sia lodato il Signore\nche porta il nostro peso\ngiorno per giorno.","Salmi 68:19"],
+  ["Il Signore ti darà forza;\nbendirà il suo popolo\ncon la pace.","Salmi 29:11"],
+  ["Il sole non ti colpirà di giorno,\nné la luna di notte.","Salmi 121:6"],
+  ["Il mio soccorso viene dal Signore\nche ha fatto il cielo e la terra.","Salmi 121:2"],
+  ["I cieli narrano\nla gloria di Dio.","Salmi 19:1"],
+  ["Il Signore è giusto\nin tutte le sue vie\ne benigno in tutte le sue opere.","Salmi 145:17"],
+  ["Il Signore è vicino\na tutti quelli che lo invocano\nin verità.","Salmi 145:18"],
+  ["Egli ordinerà ai suoi angeli\ndi custodirti\nin tutte le tue vie.","Salmi 91:11"],
+  ["Il Signore è la mia porzione;\nperciò spero in lui.","Lamentazioni 3:24"],
+  ["È bene aspettare in silenzio\nla salvezza del Signore.","Lamentazioni 3:26"],
+  ["Il Signore non rigetta per sempre;\nse ha afflitto,\nha anche compassione.","Lamentazioni 3:31-32"],
+  ["La benedizione del Signore\narricchisce.","Proverbi 10:22"],
+  ["Il nome del Signore è\nuna torre fortissima;\nil giusto vi trova rifugio.","Proverbi 18:10"],
+  ["Chi ha trovato un amico fedele\nha trovato un tesoro.","Siracide 6:14"],
+  ["Rendiamo grazie al Padre\nche ci ha messi in grado\ndi partecipare all'eredità dei santi.","Colossesi 1:12"],
+  ["Fate ogni cosa\nsenza mormorazioni\ne senza dispute.","Filippesi 2:14"],
+  ["Operate la vostra salvezza\ncon timore e tremore.","Filippesi 2:12"],
+  ["Resistete saldi nella fede.","1 Pietro 5:9"],
+  ["Il Signore\nvi esalterà a suo tempo.","1 Pietro 5:10"],
+  ["Siate santi\nin tutta la vostra condotta.","1 Pietro 1:15"],
+  ["Voi siete una stirpe eletta,\nun sacerdozio regale,\nuna nazione santa.","1 Pietro 2:9"],
+  ["Come bambini appena nati,\ndesiderate il latte spirituale puro.","1 Pietro 2:2"],
+  ["Siete stati riscattati\ncon il prezioso sangue di Cristo.","1 Pietro 1:19"],
+  ["Dio non ci ha dato uno spirito\ndi timidità, ma di forza,\ndi amore e di saggezza.","2 Timoteo 1:7"],
+  // LUGLIO
+  ["Cantate al Signore\nun canto nuovo!\nCantate da tutta la terra!","Salmi 96:1"],
+  ["Giubilate al Signore,\nvoi di tutta la terra!","Salmi 98:4"],
+  ["Entrate nelle sue porte\ncon ringraziamento,\nnei suoi atri con lode.","Salmi 100:4"],
+  ["La tua parola è una lampada\nai miei piedi e una luce\nsul mio cammino.","Salmi 119:105"],
+  ["Ho conservato la tua parola\nnel mio cuore\nper non peccare contro di te.","Salmi 119:11"],
+  ["Signore, tu mi hai scrutato\ne conosciuto.","Salmi 139:1"],
+  ["Anche le tenebre non sono oscure\nper te; la notte risplende\ncome il giorno.","Salmi 139:12"],
+  ["Ti lodo perché sono fatto\nin modo meraviglioso.","Salmi 139:14"],
+  ["Niente sarà impossibile a Dio.","Luca 1:37"],
+  ["Con Dio\nniente è impossibile.","Matteo 19:26"],
+  ["La preghiera del giusto\nha grande efficacia.","Giacomo 5:16"],
+  ["Il frutto della giustizia\nsi semina nella pace\nper i pacifici.","Giacomo 3:18"],
+  ["Chi è saggio\ncapirà queste cose.","Osea 14:9"],
+  ["Avvicinatevi a Dio\ned egli si avvicinerà a voi.","Giacomo 4:8"],
+  ["Il Signore è pieno\ndi compassione e misericordia.","Giacomo 5:11"],
+  ["Siate facitori della parola\ne non solo uditori.","Giacomo 1:22"],
+  ["La religione pura\nè visitare gli orfani\ne le vedove nelle afflizioni.","Giacomo 1:27"],
+  ["Umiliatevi davanti al Signore\ned egli vi esalterà.","Giacomo 4:10"],
+  ["Il principio della saggezza\nè il timore del Signore.","Proverbi 1:7"],
+  ["Chi sa trattenersi le labbra\nè saggio.","Proverbi 10:19"],
+  ["Il cuore del saggio\ncerca la conoscenza.","Proverbi 18:15"],
+  ["Ogni cosa ha il suo tempo,\nogni progetto sotto il cielo\nha il suo momento.","Ecclesiaste 3:1"],
+  ["Egli ha fatto bella\nogni cosa a suo tempo.","Ecclesiaste 3:11"],
+  ["Dio ascolterà la mia voce;\negli mi darà ascolto.","Salmi 55:17"],
+  ["Il Signore ascolta\nla preghiera dei giusti.","Proverbi 15:29"],
+  ["Il Signore è il mio rifugio;\nin lui confido.","Salmi 91:2"],
+  ["Cantate inni al Signore;\ncelebrate tutte le sue meraviglie!","Salmi 105:2"],
+  ["Benedite il Signore in ogni tempo;\nla sua lode è sempre\nsulle mie labbra.","Salmi 34:1"],
+  ["Cercate il Signore e la sua forza;\ncercate sempre il suo volto.","Salmi 105:4"],
+  ["Il Signore protegge i semplici;\nero in pericolo\ned egli mi ha salvato.","Salmi 116:6"],
+  ["Siate sobri e vegliate.\nResistete saldi nella fede.","1 Pietro 5:8-9"],
+  // AGOSTO
+  ["Non temere, perché ti ho riscattato;\nti ho chiamato per nome,\ntu sei mio!","Isaia 43:1"],
+  ["Quando passerai attraverso le acque,\nsarò con te.","Isaia 43:2"],
+  ["Ecco, io faccio una cosa nuova;\ngià spunta, non la vedete?","Isaia 43:19"],
+  ["Quelli che sperano nel Signore\nsi alzano in volo come aquile.","Isaia 40:31"],
+  ["Non sarai\nmai più abbandonato.","Isaia 62:4"],
+  ["Grande è il nostro Signore\ne molto potente;\nla sua intelligenza è senza misura.","Salmi 147:5"],
+  ["Narrate tra le nazioni la sua gloria,\ntra tutti i popoli\nle sue meraviglie.","Salmi 96:3"],
+  ["La terra è del Signore\ne tutto ciò che essa contiene.","Salmi 24:1"],
+  ["Il Signore è forte e potente\nin battaglia.","Salmi 24:8"],
+  ["Il Signore è il tuo custode;\nla tua ombra alla tua mano destra.","Salmi 121:5"],
+  ["Alzate gli occhi in alto:\nchi ha creato queste cose?","Isaia 40:26"],
+  ["I cieli narrano la gloria di Dio;\nil firmamento annuncia\nl'opera delle sue mani.","Salmi 19:1"],
+  ["Il Signore è vicino\na tutti quelli che lo invocano\nin verità.","Salmi 145:18"],
+  ["Colui che abita al riparo\ndell'Altissimo soggiorna\nall'ombra dell'Onnipotente.","Salmi 91:1"],
+  ["Egli ordinerà ai suoi angeli\ndi custodirti\nin tutte le tue vie.","Salmi 91:11"],
+  ["Il Signore è la mia porzione;\nperciò spero in lui.","Lamentazioni 3:24"],
+  ["È bene aspettare in silenzio\nla salvezza del Signore.","Lamentazioni 3:26"],
+  ["La via del Signore è rifugio\nper chi ha integrità.","Proverbi 10:29"],
+  ["La benedizione del Signore\narricchisce senza aggiungere dolore.","Proverbi 10:22"],
+  ["Chi conosce Dio\nobbedisce ai suoi comandamenti.","1 Giovanni 2:3"],
+  ["Sia esaltato il nome di Dio\nda sempre e per sempre.","Daniele 2:20"],
+  ["O Signore Dio mio,\nquanto sei grande!\nSei rivestito di maestà.","Salmi 104:1"],
+  ["Il Signore ha stabilito\nil suo trono nei cieli;\nil suo regno domina su tutto.","Salmi 103:19"],
+  ["Chiunque invocherà\nil nome del Signore\nsarà salvato.","Atti 2:21"],
+  ["Rimasero perseveranti\nnell'insegnamento, nella comunione,\nnel pane e nelle preghiere.","Atti 2:42"],
+  ["Non c'è salvezza\nin nessun altro nome\nsotto il cielo.","Atti 4:12"],
+  ["Bisogna ubbidire a Dio\npiuttosto che agli uomini.","Atti 5:29"],
+  ["Voi siete il corpo di Cristo\ne ciascuno di voi\nè un membro di esso.","1 Corinzi 12:27"],
+  ["Con grande potenza\ngli apostoli rendevano testimonianza\ndella risurrezione.","Atti 4:33"],
+  ["Sii la luce del mondo.\nUna città sul monte\nnon può rimaner nascosta.","Matteo 5:14"],
+  ["Il Signore è buono,\nun rifugio nel giorno\ndella distretta.","Naum 1:7"],
+  // SETTEMBRE
+  ["Dio ascolta la preghiera\ndegli umili e non disprezza\nla loro supplica.","Salmi 102:17"],
+  ["Avvicinatevi a Dio\nnella preghiera\ne troverete misericordia.","Ebrei 4:16"],
+  ["Ritornerai al Signore tuo Dio\ncon tutto il tuo cuore.","Deuteronomio 30:2"],
+  ["Amerai il Signore tuo Dio\ncon tutto il cuore,\ncon tutta l'anima.","Deuteronomio 6:5"],
+  ["Il Signore vi ama di amore eterno;\nvi ha conservato la sua grazia.","Geremia 31:3"],
+  ["Chiama a me ed io ti risponderò;\nti mostrerò cose grandi.","Geremia 33:3"],
+  ["Voi mi cercherete e mi troverete,\nperché mi cercherete\ncon tutto il cuore.","Geremia 29:13"],
+  ["Forte come la morte\nè l'amore.","Cantico 8:6"],
+  ["Le grandi acque non possono\nspegnere l'amore.","Cantico 8:7"],
+  ["Il mio diletto è mio\ne io sono sua.","Cantico 2:16"],
+  ["Cammina con sapienza,\napprofittando del tempo.","Colossesi 4:5"],
+  ["In tutto rendete grazie;\nquesta è la volontà di Dio.","1 Tessalonicesi 5:18"],
+  ["Pregate\nincessantemente.","1 Tessalonicesi 5:17"],
+  ["Siate\nsempre gioiosi.","1 Tessalonicesi 5:16"],
+  ["Non spegnete\nlo Spirito.","1 Tessalonicesi 5:19"],
+  ["Tenete ben stretto\nciò che è buono.","1 Tessalonicesi 5:21"],
+  ["Chi è fedele nel poco\nè fedele anche nel molto.","Luca 16:10"],
+  ["Sforzati di presentarti\ndavanti a Dio come uomo\ndegno di approvazione.","2 Timoteo 2:15"],
+  ["La Sacra Scrittura è ispirata da Dio\ned è utile per insegnare\ne correggere.","2 Timoteo 3:16"],
+  ["Annuncia la parola di Dio\nin ogni occasione.","2 Timoteo 4:2"],
+  ["Il Signore mi libererà\nda ogni azione malvagia.","2 Timoteo 4:18"],
+  ["Trasformatevi mediante\nil rinnovamento della mente.","Romani 12:2"],
+  ["Da lui, per mezzo di lui\ne per lui sono tutte le cose.\nA lui la gloria.","Romani 11:36"],
+  ["Offrite i vostri corpi\ncome un sacrificio vivente,\nsanto, gradito a Dio.","Romani 12:1"],
+  ["Siate allegri nella speranza,\npazienti nella tribolazione,\nperseveranti nella preghiera.","Romani 12:12"],
+  ["L'amore\nè il compimento della legge.","Romani 13:10"],
+  ["Come sono belli i piedi\ndi coloro che annunziano\nbuone notizie!","Romani 10:15"],
+  ["La fede viene dall'ascolto\ne l'ascolto\ndalla parola di Cristo.","Romani 10:17"],
+  ["Chi invoca il nome del Signore\nsarà salvato.","Romani 10:13"],
+  ["Il Dio della pace schiaccerà\npresto Satana\nsotto i vostri piedi.","Romani 16:20"],
+  // OTTOBRE
+  ["La pace di Dio supera\nogni intelligenza\ne custodirà i vostri cuori.","Filippesi 4:7"],
+  ["Tutto ciò che è vero,\nnobile, giusto, puro, amabile:\npensate a queste cose.","Filippesi 4:8"],
+  ["Il Dio della pace\nsarà con voi.","Filippesi 4:9"],
+  ["Chi ha incominciato\nin voi questa buona opera\nla perfezionerà.","Filippesi 1:6"],
+  ["Per me\nvivere è Cristo.","Filippesi 1:21"],
+  ["Conducete una vita degna\ndel Vangelo di Cristo.","Filippesi 1:27"],
+  ["Con umiltà considerate\ngli altri superiori\na voi stessi.","Filippesi 2:3"],
+  ["Dio ha fatto di lui\nil nome che è al di sopra\ndi ogni nome.","Filippesi 2:9"],
+  ["Nel nome di Gesù\nsi pieghi ogni ginocchio.","Filippesi 2:10"],
+  ["Dimentico le cose che sono dietro\ne mi slancio\nverso quelle che sono davanti.","Filippesi 3:13"],
+  ["Corro verso la meta\nper il premio della vocazione\nceleste di Dio.","Filippesi 3:14"],
+  ["La nostra cittadinanza\nè nei cieli.","Filippesi 3:20"],
+  ["Quanto è amabile\nil tuo nome su tutta la terra!","Salmi 8:1"],
+  ["Che cos'è l'uomo\nperché tu ti ricordi di lui?","Salmi 8:4"],
+  ["Lo hai coronato\ndi gloria e di onore.","Salmi 8:5"],
+  ["Manderai il tuo Spirito e saranno creati;\nrinnoverai la faccia della terra.","Salmi 104:30"],
+  ["Il Signore ha pietà\ndi quanti lo temono,\nperché sa come siamo fatti.","Salmi 103:13-14"],
+  ["Siamo salvati per grazia\nmediante la fede;\nè il dono di Dio.","Efesini 2:8"],
+  ["Cristo abiti per mezzo della fede\nnei vostri cuori.","Efesini 3:17"],
+  ["Rivestitevi della completa\narmatura di Dio.","Efesini 6:11"],
+  ["Prendete soprattutto\nlo scudo della fede.","Efesini 6:16"],
+  ["Prendete l'elmo della salvezza\ne la spada dello Spirito,\nche è la parola di Dio.","Efesini 6:17"],
+  ["Camminate nell'amore,\ncome anche Cristo\nvi ha amati.","Efesini 5:2"],
+  ["Svegliatevi, o dormiente,\nalzatevi dai morti\ne Cristo vi illuminerà.","Efesini 5:14"],
+  ["Siate pieni dello Spirito.\nCantate di cuore al Signore.","Efesini 5:18-19"],
+  ["Non c'è né schiavo né libero;\nsiamo tutti uno in Cristo.","Galati 3:28"],
+  ["Chi semina nello Spirito\ndallo Spirito mieterà\nvita eterna.","Galati 6:8"],
+  ["Lo Spirito vi ha dato i doni\ndella grazia\nper il bene comune.","1 Corinzi 12:7"],
+  ["Siate fermi, incrollabili,\nsempre progredendo\nnell'opera del Signore.","1 Corinzi 15:58"],
+  ["La morte è stata inghiottita\nnella vittoria!","1 Corinzi 15:54"],
+  ["Sia che mangiate sia che beviate,\nfatelo tutto\nalla gloria di Dio.","1 Corinzi 10:31"],
+  // NOVEMBRE
+  ["Anche se parlassi\nle lingue degli angeli,\nsenza l'amore sarei nulla.","1 Corinzi 13:1"],
+  ["Ora vediamo come in uno specchio;\nallora vedremo\nfaccia a faccia.","1 Corinzi 13:12"],
+  ["Fede, speranza, carità:\nma la più grande\ndi queste è la carità.","1 Corinzi 13:13"],
+  ["Dio è fedele:\nnon permetterà che siate tentati\noltre le vostre forze.","1 Corinzi 10:13"],
+  ["Tutto mi è lecito,\nma non tutto edifica.","1 Corinzi 10:23"],
+  ["La grazia del Signore\nGesù Cristo\nsia con tutti voi.","Apocalisse 22:21"],
+  ["Lo Spirito e la sposa dicono:\nVieni!","Apocalisse 22:17"],
+  ["Beati coloro che lavano le vesti\nper avere diritto\nall'albero della vita.","Apocalisse 22:14"],
+  ["Io sono l'alfa e l'omega,\nil primo e l'ultimo,\nil principio e la fine.","Apocalisse 22:13"],
+  ["Dio asciugherà\nogni lacrima dai loro occhi.","Apocalisse 21:4"],
+  ["Ecco,\nio faccio nuove tutte le cose.","Apocalisse 21:5"],
+  ["Quanto è buono e soave\nche i fratelli\nvivano insieme.","Salmi 133:1"],
+  ["Lodate il Signore!\nLodate il nome del Signore!","Salmi 135:1"],
+  ["Abbiate fede in Dio.\nNulla vi sarà impossibile.","Marco 11:22-23"],
+  ["Tutto quello che domandate\nnella preghiera,\ncredete di averlo ricevuto.","Marco 11:24"],
+  ["L'amore non vanta i propri meriti,\nnon si gonfia d'orgoglio.","1 Corinzi 13:4"],
+  ["Cercate uomini fedeli\ncapaci di insegnare anche ad altri.","2 Timoteo 2:2"],
+  ["Il Signore ti protegge;\nè la tua ombra\nalla tua mano destra.","Salmi 121:5"],
+  ["Io sono con voi sempre,\nfino alla fine del mondo.","Matteo 28:20"],
+  ["Il Signore è il mio pastore;\nnulla mi mancherà.","Salmi 23:1"],
+  ["Anche se camminassi\nnella valle dell'ombra,\nnon temerei alcun male.","Salmi 23:4"],
+  ["Bontà e misericordia\nmi seguiranno\ntutta la vita.","Salmi 23:6"],
+  ["Il Signore è la mia luce\ne la mia salvezza.","Salmi 27:1"],
+  ["Attendete il Signore,\nsiate forti,\nil vostro cuore si coraggio.","Salmi 27:14"],
+  ["Il Signore è buono;\nla sua grazia è eterna.","Salmi 118:1"],
+  ["Questa è la giornata\nche il Signore ha fatto;\nrallegriamoci!","Salmi 118:24"],
+  ["Benedetto colui\nche viene nel nome del Signore!","Salmi 118:26"],
+  ["Il Signore è Dio\ne ci ha dato la luce.","Salmi 118:27"],
+  ["Il nome di Gesù\nè sopra ogni altro nome!","Filippesi 2:9"],
+  ["Lodate il Signore\nda ogni angolo della terra!","Salmi 117:1"],
+  // DICEMBRE
+  ["Ecco, la vergine sarà incinta\ne partorirà un figlio:\nEmmanuele, Dio con noi.","Matteo 1:23"],
+  ["Oggi, nella città di Davide,\nvi è nato un Salvatore,\nche è Cristo il Signore.","Luca 2:11"],
+  ["Gloria a Dio nei luoghi altissimi\ne pace in terra\nagli uomini che egli gradisce!","Luca 2:14"],
+  ["Dio ha tanto amato il mondo\nche ha dato\nil suo Figlio unigenito.","Giovanni 3:16"],
+  ["La Parola è diventata carne\ne ha abitato\nper un tempo tra noi.","Giovanni 1:14"],
+  ["La luce risplende nelle tenebre\ne le tenebre\nnon l'hanno sopraffatta.","Giovanni 1:5"],
+  ["A tutti quelli che lo hanno ricevuto\nha dato il diritto\ndi diventare figli di Dio.","Giovanni 1:12"],
+  ["Non temere, Maria,\nperché hai trovato grazia\npresso Dio.","Luca 1:30"],
+  ["Niente sarà\nimpossibile a Dio.","Luca 1:37"],
+  ["L'anima mia magnifica il Signore\ne il mio spirito esulta\nin Dio mio Salvatore.","Luca 1:46-47"],
+  ["Il bambino cresceva\ne si fortificava,\nriempiendosi di sapienza.","Luca 2:40"],
+  ["Lodate il Signore, popoli tutti;\nglorificate lo, nazioni tutte!","Salmi 117:1"],
+  ["La sua bontà verso di noi è grande\ne la fedeltà del Signore\ndura in eterno.","Salmi 117:2"],
+  ["Rendete grazie al Signore,\nperché è buono;\nla sua grazia è eterna.","Salmi 118:1"],
+  ["Questa è la giornata\nche il Signore ha fatto;\nrallegriamoci ed esultiamo!","Salmi 118:24"],
+  ["Benedetto colui\nche viene nel nome del Signore!","Salmi 118:26"],
+  ["Quanto è buono e soave\nche i fratelli vivano insieme.","Salmi 133:1"],
+  ["Il Signore è Dio\ne ci ha dato la luce.","Salmi 118:27"],
+  ["Il nome di Gesù\nè sopra ogni altro nome.","Filippesi 2:9"],
+  ["Abbiate fede in Dio;\nniente vi sarà impossibile.","Marco 11:22-23"],
+  ["Tutto quello che domandate\nnella preghiera,\ncredete di averlo ricevuto.","Marco 11:24"],
+  ["Io sono l'alfa e l'omega,\nil primo e l'ultimo.","Apocalisse 22:13"],
+  ["Beati coloro che lavano le vesti\nper avere diritto\nall'albero della vita.","Apocalisse 22:14"],
+  ["Lo Spirito e la sposa dicono: Vieni!\nChi ha sete attinga\nall'acqua della vita.","Apocalisse 22:17"],
+  ["La grazia del Signore Gesù Cristo\nsia con tutti voi.\nAmen.","Apocalisse 22:21"],
+  ["Sì, vengo presto! Amen.\nVieni, Signore Gesù!","Apocalisse 22:20"],
+  ["Dio era in Cristo\nriconciliando il mondo\ncon se stesso.","2 Corinzi 5:19"],
+  ["Chi è in Cristo\nè una nuova creatura;\nle cose vecchie sono passate.","2 Corinzi 5:17"],
+  ["Il nome del Signore\nsia benedetto\nda ora e per sempre.","Salmi 113:2"],
+  ["Dal sorgere del sole\nfino al tramonto\nsia lodato il nome del Signore.","Salmi 113:3"],
+  ["Lodate il Signore,\nbenedite il suo nome\nin eterno!","Salmi 145:21"],
+];
+
+// ── Pick verse by day of year ──
+function dayOfYear(){
+  const n=new Date(), s=new Date(n.getFullYear(),0,0);
+  return Math.floor((n-s)/864e5);
+}
+const idx=(dayOfYear()-1+V.length)%V.length;
+const [text,ref]=V[idx];
+
+// ── Render ──
+document.getElementById('verse').textContent=text;
+document.getElementById('ref').textContent='— '+ref+' —';
+
+const now=new Date();
+document.getElementById('date').textContent=
+  now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
+
+// ── Share ──
+document.getElementById('shareBtn').addEventListener('click',()=>{
+  const full=`"${text}"\n— ${ref} —\n\n📖 Parola del Giorno`;
+  if(navigator.share){
+    navigator.share({title:'Parola del Giorno',text:full}).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(full).then(()=>{
+      const t=document.getElementById('toast');
+      t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'),2200);
+    }).catch(()=>{});
+  }
+});
+
+// ── Stars canvas — throttled to ~12fps to save battery ──
+(function(){
+  const cv=document.getElementById('stars');
+  const cx=cv.getContext('2d');
+  function resize(){
+    cv.width=innerWidth;
+    cv.height=innerHeight;
+  }
+  resize();
+  addEventListener('resize',resize);
+
+  // Mix of small, medium and large stars with very different pulse rhythms
+  const ST=Array.from({length:160},()=>{
+    const roll=Math.random();
+    // ~10% big bright stars, ~25% medium, rest small
+    const r = roll<0.10 ? 2.2+Math.random()*1.2   // big: 2.2–3.4px
+            : roll<0.35 ? 1.4+Math.random()*0.8    // medium: 1.4–2.2px
+                        : 0.6+Math.random()*0.7;   // small: 0.6–1.3px
+    return {
+      x:Math.random(), y:Math.random(),
+      r,
+      // base brightness higher for bigger stars
+      base: r>2 ? 0.6+Math.random()*0.4
+               : r>1.4 ? 0.4+Math.random()*0.4
+               : 0.2+Math.random()*0.5,
+      // wide speed range → very random feel: some slow dreamers, some fast flashers
+      speed: 0.1+Math.random()*Math.random()*3.5,
+      phase: Math.random()*Math.PI*2,
+      // occasional "flicker" stars that drop near zero
+      flicker: Math.random()<0.15
+    };
+  });
+
+  let last=0;
+  const INTERVAL=1000/12; // 12fps max
+
+  function draw(ts){
+    requestAnimationFrame(draw);
+    if(ts-last < INTERVAL) return;
+    last=ts;
+    const t=ts/1000;
+    cx.clearRect(0,0,cv.width,cv.height);
+    ST.forEach(s=>{
+      // base sine wave
+      let wave=Math.sin(t*s.speed*Math.PI*2/60+s.phase);
+      // flicker stars: also multiply by a faster secondary wave
+      if(s.flicker) wave*=0.5+0.5*Math.abs(Math.sin(t*s.speed*4+s.phase*1.7));
+      const a=Math.max(0.05, s.base*(0.3+0.7*((wave+1)/2)));
+      cx.beginPath();
+      cx.arc(s.x*cv.width, s.y*cv.height, s.r, 0, Math.PI*2);
+      // big stars get a warm white, small ones slightly golden
+      const g = s.r>2 ? 220 : 210;
+      const b = s.r>2 ? 210 : 155;
+      cx.fillStyle=`rgba(230,${g},${b},${a.toFixed(2)})`;
+      cx.fill();
+    });
+  }
+  requestAnimationFrame(draw);
+})();
+// ── Service Worker ──
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>

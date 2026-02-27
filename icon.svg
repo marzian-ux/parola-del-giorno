@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#07050f" rx="80"/>
+  <!-- Outer ring -->
+  <circle cx="256" cy="256" r="220" fill="none" stroke="#c9a84c" stroke-width="2" opacity="0.4"/>
+  <circle cx="256" cy="256" r="200" fill="none" stroke="#c9a84c" stroke-width="1" opacity="0.2"/>
+  <!-- Cross -->
+  <line x1="256" y1="80" x2="256" y2="432" stroke="#c9a84c" stroke-width="8" stroke-linecap="round"/>
+  <line x1="100" y1="200" x2="412" y2="200" stroke="#c9a84c" stroke-width="8" stroke-linecap="round"/>
+  <!-- Center diamond -->
+  <polygon points="256,176 276,200 256,224 236,200" fill="#c9a84c"/>
+  <!-- Corner stars -->
+  <circle cx="256" cy="90"  r="6" fill="#e8c97a"/>
+  <circle cx="256" cy="422" r="6" fill="#e8c97a"/>
+  <circle cx="108" cy="200" r="6" fill="#e8c97a"/>
+  <circle cx="404" cy="200" r="6" fill="#e8c97a"/>
+  <!-- Small accent dots -->
+  <circle cx="170" cy="320" r="3" fill="#c9a84c" opacity="0.6"/>
+  <circle cx="342" cy="320" r="3" fill="#c9a84c" opacity="0.6"/>
+  <circle cx="256" cy="360" r="3" fill="#c9a84c" opacity="0.6"/>
+</svg>
